@@ -3,10 +3,25 @@ defmodule PhoenixBoardsWeb.Router do
 
   pipeline :api do
     plug :accepts, ["json"]
+    plug PhoenixBoardsWeb.APIAuthPlug, otp_app: :phoenix_boards
   end
 
-  scope "/", PhoenixBoardsWeb do
+  pipeline :api_protected do
+    plug Pow.Plug.RequireAuthenticated, error_handler: PhoenixBoardsWeb.APIAuthErrorHandler
+  end
+
+  scope "/v1", PhoenixBoardsWeb.V1, as: :api_v1 do
     pipe_through :api
+
+    resources "/registration", RegistrationController, singleton: true, only: [:create]
+    resources "/session", SessionController, singleton: true, only: [:create, :delete]
+    post "/session/renew", SessionController, :renew
+  end
+
+  scope "/v1", PhoenixBoardsWeb.V1, as: :api_v1 do
+    pipe_through [:api, :api_protected]
+
+    # Protected endpoints will go here
   end
 
   # Enable LiveDashboard and Swoosh mailbox preview in development
