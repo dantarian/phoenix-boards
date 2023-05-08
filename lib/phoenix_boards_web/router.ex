@@ -14,6 +14,7 @@ defmodule PhoenixBoardsWeb.Router do
     pipe_through :api
 
     resources "/registration", RegistrationController, singleton: true, only: [:create]
+    get "/confirmation/:id", ConfirmationController, :confirm
     resources "/session", SessionController, singleton: true, only: [:create, :delete]
     post "/session/renew", SessionController, :renew
   end

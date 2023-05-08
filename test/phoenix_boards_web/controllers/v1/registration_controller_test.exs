@@ -1,18 +1,28 @@
 defmodule PhoenixBoardsWeb.V1.RegistrationControllerTest do
   use PhoenixBoardsWeb.ConnCase
 
+  import Swoosh.TestAssertions
+
   @password "secret1234"
 
   describe "create/2" do
-    @valid_params %{"user" => %{"email" => "test@example.com", "password" => @password, "password_confirmation" => @password}}
-    @invalid_params %{"user" => %{"email" => "invalid", "password" => @password, "password_confirmation" => ""}}
+    @valid_params %{
+      "user" => %{
+        "email" => "test@example.com",
+        "password" => @password,
+        "password_confirmation" => @password
+      }
+    }
+    @invalid_params %{
+      "user" => %{"email" => "invalid", "password" => @password, "password_confirmation" => ""}
+    }
 
     test "with valid params", %{conn: conn} do
       conn = post(conn, ~p"/v1/registration", @valid_params)
 
       assert json = json_response(conn, 200)
-      assert json["data"]["access_token"]
-      assert json["data"]["renewal_token"]
+      assert json["data"]["result"]
+      assert_email_sent(to: "test@example.com", subject: "Welcome to BathLARP!")
     end
 
     test "with invalid params", %{conn: conn} do

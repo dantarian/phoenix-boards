@@ -6,17 +6,33 @@ defmodule PhoenixBoardsWeb.V1.SessionControllerTest do
   @password "secret1234"
 
   setup do
-    user =
+    confirmed_user =
       %User{}
-      |> User.changeset(%{email: "test@example.com", password: @password, password_confirmation: @password})
+      |> User.changeset(%{
+        email: "confirmed@example.com",
+        password: @password,
+        password_confirmation: @password,
+      })
       |> Repo.insert!()
 
-    {:ok, user: user}
+    PowEmailConfirmation.Ecto.Context.confirm_email(confirmed_user, %{}, otp_app: :phoenix_boards)
+
+    unconfirmed_user =
+        %User{}
+        |> User.changeset(%{
+          email: "unconfirmed@example.com",
+          password: @password,
+          password_confirmation: @password,
+        })
+        |> Repo.insert!()
+
+    {:ok, confirmed_user: confirmed_user, unconfirmed_user: unconfirmed_user}
   end
 
   describe "create/2" do
-    @valid_params %{"user" => %{"email" => "test@example.com", "password" => @password}}
-    @invalid_params %{"user" => %{"email" => "test@example.com", "password" => "invalid"}}
+    @valid_params %{"user" => %{"email" => "confirmed@example.com", "password" => @password}}
+    @unconfirmed_params %{"user" => %{"email" => "unconfirmed@example.com", "password" => @password}}
+    @invalid_params %{"user" => %{"email" => "confirmed@example.com", "password" => "invalid"}}
 
     test "with valid params", %{conn: conn} do
       conn = post(conn, ~p"/v1/session", @valid_params)
@@ -24,6 +40,14 @@ defmodule PhoenixBoardsWeb.V1.SessionControllerTest do
       assert json = json_response(conn, 200)
       assert json["data"]["access_token"]
       assert json["data"]["renewal_token"]
+    end
+
+    test "with valid params but unconfirmed user", %{conn: conn} do
+      conn = post(conn, ~p"/v1/session", @unconfirmed_params)
+
+      assert json = json_response(conn, 403)
+      assert json["error"]["message"] == "You need to confirm your email address before logging in. Check your email."
+      assert json["error"]["status"] == 403
     end
 
     test "with invalid params", %{conn: conn} do
@@ -76,7 +100,7 @@ defmodule PhoenixBoardsWeb.V1.SessionControllerTest do
       conn =
         conn
         |> Plug.Conn.put_req_header("authorization", token)
-        |> delete( ~p"/v1/session/")
+        |> delete(~p"/v1/session/")
 
       assert json = json_response(conn, 200)
       assert json["data"] == %{}

@@ -6,16 +6,24 @@ defmodule PhoenixBoardsWeb.V1.SessionController do
 
   @spec create(Conn.t(), map()) :: Conn.t()
   def create(conn, %{"user" => user_params}) do
-    conn
-    |> Pow.Plug.authenticate_user(user_params)
-    |> case do
-      {:ok, conn} ->
-        json(conn, %{data: %{access_token: conn.private.api_access_token, renewal_token: conn.private.api_renewal_token}})
-
+    with {:ok, conn} <- Pow.Plug.authenticate_user(conn, user_params),
+      false <- PowEmailConfirmation.Plug.email_unconfirmed?(conn)
+    do
+      json(conn, %{
+        data: %{
+          access_token: conn.private.api_access_token,
+          renewal_token: conn.private.api_renewal_token
+        }
+      })
+    else
       {:error, conn} ->
         conn
         |> put_status(401)
         |> json(%{error: %{status: 401, message: "Invalid email or password"}})
+      true ->
+        conn
+        |> put_status(403)
+        |> json(%{error: %{status: 403, message: "You need to confirm your email address before logging in. Check your email."}})
     end
   end
 
@@ -32,7 +40,12 @@ defmodule PhoenixBoardsWeb.V1.SessionController do
         |> json(%{error: %{status: 401, message: "Invalid token"}})
 
       {conn, _user} ->
-        json(conn, %{data: %{access_token: conn.private.api_access_token, renewal_token: conn.private.api_renewal_token}})
+        json(conn, %{
+          data: %{
+            access_token: conn.private.api_access_token,
+            renewal_token: conn.private.api_renewal_token
+          }
+        })
     end
   end
 
