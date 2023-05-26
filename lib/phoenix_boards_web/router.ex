@@ -22,7 +22,9 @@ defmodule PhoenixBoardsWeb.Router do
   scope "/v1", PhoenixBoardsWeb.V1, as: :api_v1 do
     pipe_through [:api, :api_protected]
 
-    # Protected endpoints will go here
+    resources "/boards", BoardController, except: [:new, :edit] do
+      resources "/messages", MessageController, except: [:new, :edit]
+    end
   end
 
   # Enable LiveDashboard and Swoosh mailbox preview in development
