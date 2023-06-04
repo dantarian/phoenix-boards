@@ -105,16 +105,17 @@ defmodule PhoenixBoards.Boards do
   alias PhoenixBoards.Boards.Message
 
   @doc """
-  Returns the list of messages.
+  Returns the list of messages for a board.
 
   ## Examples
 
-      iex> list_messages()
+      iex> list_messages(123)
       [%Message{}, ...]
 
   """
-  def list_messages do
-    Repo.all(Message)
+  def list_messages(board_id) do
+    from m in Message, where: m.board_id = ^board_id
+    |> Repo.all()
   end
 
   @doc """

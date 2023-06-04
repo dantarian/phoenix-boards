@@ -70,9 +70,10 @@ defmodule PhoenixBoards.BoardsTest do
 
     @invalid_attrs %{from: nil, message: nil}
 
-    test "list_messages/0 returns all messages" do
+    test "list_messages/1 returns all messages for a board" do
+      board = board_fixture()
       message = message_fixture()
-      assert Boards.list_messages() == [message]
+      assert Boards.list_messages(board.id) == [message]
     end
 
     test "get_message!/1 returns the message with given id" do

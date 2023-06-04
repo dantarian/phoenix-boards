@@ -6,8 +6,8 @@ defmodule PhoenixBoardsWeb.V1.MessageController do
 
   action_fallback PhoenixBoardsWeb.FallbackController
 
-  def index(conn, _params) do
-    messages = Boards.list_messages()
+  def index(conn, %{{"board_id" => board_id}}) do
+    messages = Boards.list_messages(board_id)
     render(conn, :index, messages: messages)
   end
 
