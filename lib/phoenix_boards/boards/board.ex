@@ -8,6 +8,8 @@ defmodule PhoenixBoards.Boards.Board do
     field :open, :boolean, default: false
     field :title, :string
 
+    has_many :messages, PhoenixBoards.Boards.Message
+
     timestamps()
   end
 

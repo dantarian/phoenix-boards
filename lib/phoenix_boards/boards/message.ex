@@ -5,7 +5,9 @@ defmodule PhoenixBoards.Boards.Message do
   schema "messages" do
     field :from, :string
     field :message, :string
-    field :user_id, :id
+
+    belongs_to :user, PhoenixBoards.Users.User
+    belongs_to :board, PhoenixBoards.Boards.Board
 
     timestamps()
   end

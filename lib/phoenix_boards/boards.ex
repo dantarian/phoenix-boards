@@ -7,6 +7,7 @@ defmodule PhoenixBoards.Boards do
   alias PhoenixBoards.Repo
 
   alias PhoenixBoards.Boards.Board
+  alias PhoenixBoards.Users.User
 
   @doc """
   Returns the list of boards.
@@ -114,7 +115,7 @@ defmodule PhoenixBoards.Boards do
 
   """
   def list_messages(board_id) do
-    from m in Message, where: m.board_id = ^board_id
+    from(m in Message, where: m.board_id == ^board_id)
     |> Repo.all()
   end
 
@@ -139,16 +140,18 @@ defmodule PhoenixBoards.Boards do
 
   ## Examples
 
-      iex> create_message(%{field: value})
+      iex> create_message(%Board{}, %User{}, %{field: value})
       {:ok, %Message{}}
 
-      iex> create_message(%{field: bad_value})
+      iex> create_message(%Board{}, %User{}, %{field: bad_value})
       {:error, %Ecto.Changeset{}}
 
   """
-  def create_message(attrs \\ %{}) do
+  def create_message(%Board{} = board, %User{} = user, attrs \\ %{}) do
     %Message{}
     |> Message.changeset(attrs)
+    |> Ecto.Changeset.put_assoc(:board, board)
+    |> Ecto.Changeset.put_assoc(:user, user)
     |> Repo.insert()
   end
 

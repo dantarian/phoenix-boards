@@ -11,27 +11,29 @@ defmodule PhoenixBoardsWeb.V1.SessionControllerTest do
       |> User.changeset(%{
         email: "confirmed@example.com",
         password: @password,
-        password_confirmation: @password,
+        password_confirmation: @password
       })
       |> Repo.insert!()
 
     PowEmailConfirmation.Ecto.Context.confirm_email(confirmed_user, %{}, otp_app: :phoenix_boards)
 
     unconfirmed_user =
-        %User{}
-        |> User.changeset(%{
-          email: "unconfirmed@example.com",
-          password: @password,
-          password_confirmation: @password,
-        })
-        |> Repo.insert!()
+      %User{}
+      |> User.changeset(%{
+        email: "unconfirmed@example.com",
+        password: @password,
+        password_confirmation: @password
+      })
+      |> Repo.insert!()
 
     {:ok, confirmed_user: confirmed_user, unconfirmed_user: unconfirmed_user}
   end
 
   describe "create/2" do
     @valid_params %{"user" => %{"email" => "confirmed@example.com", "password" => @password}}
-    @unconfirmed_params %{"user" => %{"email" => "unconfirmed@example.com", "password" => @password}}
+    @unconfirmed_params %{
+      "user" => %{"email" => "unconfirmed@example.com", "password" => @password}
+    }
     @invalid_params %{"user" => %{"email" => "confirmed@example.com", "password" => "invalid"}}
 
     test "with valid params", %{conn: conn} do
@@ -46,7 +48,10 @@ defmodule PhoenixBoardsWeb.V1.SessionControllerTest do
       conn = post(conn, ~p"/v1/session", @unconfirmed_params)
 
       assert json = json_response(conn, 403)
-      assert json["error"]["message"] == "You need to confirm your email address before logging in. Check your email."
+
+      assert json["error"]["message"] ==
+               "You need to confirm your email address before logging in. Check your email."
+
       assert json["error"]["status"] == 403
     end
 

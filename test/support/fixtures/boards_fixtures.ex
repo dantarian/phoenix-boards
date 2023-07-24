@@ -24,14 +24,15 @@ defmodule PhoenixBoards.BoardsFixtures do
   @doc """
   Generate a message.
   """
-  def message_fixture(attrs \\ %{}) do
-    {:ok, message} =
+  def message_fixture(board, user, attrs \\ %{}) do
+    attrs =
       attrs
       |> Enum.into(%{
         from: "some from",
         message: "some message"
       })
-      |> PhoenixBoards.Boards.create_message()
+
+    {:ok, message} = PhoenixBoards.Boards.create_message(board, user, attrs)
 
     message
   end

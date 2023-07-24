@@ -7,8 +7,7 @@ defmodule PhoenixBoardsWeb.V1.SessionController do
   @spec create(Conn.t(), map()) :: Conn.t()
   def create(conn, %{"user" => user_params}) do
     with {:ok, conn} <- Pow.Plug.authenticate_user(conn, user_params),
-      false <- PowEmailConfirmation.Plug.email_unconfirmed?(conn)
-    do
+         false <- PowEmailConfirmation.Plug.email_unconfirmed?(conn) do
       json(conn, %{
         data: %{
           access_token: conn.private.api_access_token,
@@ -20,10 +19,16 @@ defmodule PhoenixBoardsWeb.V1.SessionController do
         conn
         |> put_status(401)
         |> json(%{error: %{status: 401, message: "Invalid email or password"}})
+
       true ->
         conn
         |> put_status(403)
-        |> json(%{error: %{status: 403, message: "You need to confirm your email address before logging in. Check your email."}})
+        |> json(%{
+          error: %{
+            status: 403,
+            message: "You need to confirm your email address before logging in. Check your email."
+          }
+        })
     end
   end
 

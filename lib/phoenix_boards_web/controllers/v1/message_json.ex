@@ -19,7 +19,9 @@ defmodule PhoenixBoardsWeb.V1.MessageJSON do
     %{
       id: message.id,
       message: message.message,
-      from: message.from
+      from: message.from,
+      board_id: message.board_id,
+      user_id: message.user_id
     }
   end
 end

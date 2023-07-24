@@ -6,13 +6,15 @@ defmodule PhoenixBoardsWeb.V1.MessageController do
 
   action_fallback PhoenixBoardsWeb.FallbackController
 
-  def index(conn, %{{"board_id" => board_id}}) do
+  def index(conn, %{"board_id" => board_id}) do
     messages = Boards.list_messages(board_id)
     render(conn, :index, messages: messages)
   end
 
   def create(conn, %{"board_id" => board_id, "message" => message_params}) do
-    with {:ok, %Message{} = message} <- Boards.create_message(message_params) do
+    with board <- Boards.get_board!(board_id),
+         user <- Pow.Plug.current_user(conn),
+         {:ok, %Message{} = message} <- Boards.create_message(board, user, message_params) do
       conn
       |> put_status(:created)
       |> put_resp_header("location", ~p"/v1/boards/#{board_id}/messages/#{message}")

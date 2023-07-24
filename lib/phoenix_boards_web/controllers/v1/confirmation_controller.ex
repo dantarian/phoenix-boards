@@ -13,10 +13,12 @@ defmodule PhoenixBoardsWeb.V1.ConfirmationController do
       {:error, _errors, conn} ->
         conn
         |> put_status(500)
-        |> json(%{error: %{
-          status: 500,
-          message: "internal server error",
-        }})
+        |> json(%{
+          error: %{
+            status: 500,
+            message: "internal server error"
+          }
+        })
     end
   end
 
@@ -25,12 +27,12 @@ defmodule PhoenixBoardsWeb.V1.ConfirmationController do
       {:error, conn} ->
         conn
         |> put_status(422)
-        |> json(
-          %{ error: %{
+        |> json(%{
+          error: %{
             status: 422,
             message: "invalid or expired token"
-          }}
-        )
+          }
+        })
         |> halt()
 
       {:ok, conn} ->

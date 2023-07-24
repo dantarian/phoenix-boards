@@ -22,6 +22,8 @@ defmodule PhoenixBoardsWeb.V1.RegistrationControllerTest do
 
       assert json = json_response(conn, 200)
       assert json["data"]["result"]
+      # 100ms - need time for async mailer to send
+      Process.sleep(100)
       assert_email_sent(to: "test@example.com", subject: "Welcome to BathLARP!")
     end
 
