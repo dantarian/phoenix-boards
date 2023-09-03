@@ -10,9 +10,9 @@ defmodule PhoenixBoards.BoardsTest do
 
     @invalid_attrs %{description: nil, in_character: nil, open: nil, title: nil}
 
-    test "list_boards/0 returns all boards" do
+    test "list_boards/1 returns a page of boards" do
       board = board_fixture()
-      assert Boards.list_boards() == [board]
+      assert %{entries: [board]} = Boards.list_boards()
     end
 
     test "get_board!/1 returns the board with given id" do

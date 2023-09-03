@@ -2,6 +2,7 @@ defmodule PhoenixBoardsWeb.BoardControllerTest do
   use PhoenixBoardsWeb.ConnCase
 
   import PhoenixBoards.BoardsFixtures
+  import OpenApiSpex.TestAssertions
 
   alias PhoenixBoards.Boards.Board
   alias PhoenixBoards.Users.User
@@ -24,13 +25,85 @@ defmodule PhoenixBoardsWeb.BoardControllerTest do
     user = %User{email: "test@example.com"}
     conn = Pow.Plug.assign_current_user(conn, user, otp_app: :phoenix_boards)
 
-    {:ok, conn: put_req_header(conn, "accept", "application/json")}
+    api_spec =
+      :code.priv_dir(:phoenix_boards)
+      |> Path.join("schema")
+      |> Path.join("boards.yaml")
+      |> YamlElixir.read_all_from_file!()
+      |> List.first()
+      |> OpenApiSpex.OpenApi.Decode.decode()
+
+    {:ok, conn: put_req_header(conn, "accept", "application/json"), api_spec: api_spec}
   end
 
   describe "index" do
-    test "lists all boards", %{conn: conn} do
-      conn = get(conn, ~p"/v1/boards")
-      assert json_response(conn, 200)["data"] == []
+    test "lists boards with no boards", %{conn: conn, api_spec: api_spec} do
+      json =
+        conn
+        |> get(~p"/v1/boards")
+        |> json_response(200)
+
+      assert json["data"] == []
+      assert_schema(json, "ListBoardsResponse", api_spec)
+    end
+
+    test "list boards with one board", %{conn: conn, api_spec: api_spec} do
+      %{board: %Board{id: id}} = create_board(%{})
+
+      json =
+        conn
+        |> get(~p"/v1/boards")
+        |> json_response(200)
+
+      assert length(json["data"]) == 1
+      assert [%{"id" => ^id}] = json["data"]
+      assert_schema(json, "ListBoardsResponse", api_spec)
+    end
+
+    test "list with filter", %{conn: conn, api_spec: api_spec} do
+      create_board(%{})
+
+      json =
+        conn
+        |> get(~p"/v1/boards?#{[state: "closed"]}")
+        |> json_response(200)
+
+        assert json["data"] == []
+        assert_schema(json, "ListBoardsResponse", api_spec)
+    end
+
+    test "list boards with multiple pages of boards", %{conn: conn, api_spec: api_spec} do
+      Enum.map(1..11, &create_board(%{title: "Board #{&1}"}))
+
+      json =
+        conn
+        |> get(~p"/v1/boards")
+        |> json_response(200)
+
+      assert length(json["data"]) == 10
+      assert %{
+        "next" => next_link,
+      } = json["links"]
+      assert_schema(json, "ListBoardsResponse", api_spec)
+
+      json =
+        conn
+        |> get(next_link)
+        |> json_response(200)
+
+      assert length(json["data"]) == 1
+      assert %{
+        "previous" => previous_link,
+      } = json["links"]
+      assert_schema(json, "ListBoardsResponse", api_spec)
+
+      json =
+        conn
+        |> get(previous_link)
+        |> json_response(200)
+
+      assert length(json["data"]) == 10
+      assert_schema(json, "ListBoardsResponse", api_spec)
     end
   end
 
@@ -42,12 +115,15 @@ defmodule PhoenixBoardsWeb.BoardControllerTest do
       conn = get(authed_conn, ~p"/v1/boards/#{id}")
 
       assert %{
-               "id" => ^id,
-               "description" => "some description",
-               "in_character" => true,
-               "open" => true,
-               "title" => "some title"
-             } = json_response(conn, 200)["data"]
+        "id" => ^id,
+        "type" => "board",
+        "attributes" => %{
+          "category" => "in_character",
+          "description" => "some description",
+          "state" => "open",
+          "title" => "some title"
+        },
+      } = json_response(conn, 200)["data"]
     end
 
     test "renders errors when data is invalid", %{conn: authed_conn} do
@@ -66,12 +142,15 @@ defmodule PhoenixBoardsWeb.BoardControllerTest do
       conn = get(authed_conn, ~p"/v1/boards/#{id}")
 
       assert %{
-               "id" => ^id,
-               "description" => "some updated description",
-               "in_character" => false,
-               "open" => false,
-               "title" => "some updated title"
-             } = json_response(conn, 200)["data"]
+        "id" => ^id,
+        "type" => "board",
+        "attributes" => %{
+          "category" => "out_of_character",
+          "description" => "some updated description",
+          "state" => "closed",
+          "title" => "some updated title"
+        },
+      } = json_response(conn, 200)["data"]
     end
 
     test "renders errors when data is invalid", %{conn: authed_conn, board: board} do
@@ -93,8 +172,8 @@ defmodule PhoenixBoardsWeb.BoardControllerTest do
     end
   end
 
-  defp create_board(_) do
-    board = board_fixture()
+  defp create_board(attrs) do
+    board = board_fixture(attrs)
     %{board: board}
   end
 end

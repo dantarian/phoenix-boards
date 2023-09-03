@@ -1,0 +1,207 @@
+openapi: "3.0.3"
+info:
+  title: Phoenix Boards
+  version: "1.0"
+
+servers:
+  - url: http://localhost:4000/v1/boards
+
+paths:
+  /:
+    get:
+      summary: List boards
+      description: Returns a list of message boards.
+      operationId: listBoards
+      tags:
+        - boards
+      parameters:
+        - in: query
+          name: state
+          required: false
+          schema:
+            $ref: "#/components/schemas/BoardState"
+          description: Whether open or closed boards should be returned
+        - in: query
+          name: limit
+          required: false
+          schema:
+            $ref: "#/components/schemas/ListLimit"
+          description: The maximum number of boards to return
+        - in: query
+          name: after
+          required: false
+          schema:
+            type: string
+          description: A cursor indicating where the list of boards should start
+        - in: query
+          name: before
+          required: false
+          schema:
+            type: string
+          description: A cursor indicating where the list of boards should end
+      responses:
+        "200":
+          description: A list of message boards
+          content:
+            application/vnd.api+json:
+              schema:
+                $ref: "#/components/schemas/ListBoardsResponse"
+        "400":
+          description: Bad request
+          content:
+            application/vnd.api+json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+components:
+  schemas:
+    ErrorResponse:
+      type: object
+      properties:
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorObject"
+    ErrorObject:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier for the instance of the error.
+        status:
+          type: integer
+          minimum: 400
+          maximum: 599
+          description: HTTP status code corresponding to the error.
+        title:
+          type: string
+          description: Short, human-readable summary of the problem.
+        detail:
+          type: string
+          description: Information about this specific instance of the problem.
+        source:
+          $ref: "#/components/schemas/ErrorSource"
+      minProperties: 1
+    ErrorSource:
+      oneOf:
+        - type: object
+          properties:
+            pointer:
+              type: string
+              description: The part of the request body to which the error pertains.
+          required:
+            - pointer
+        - type: object
+          properties:
+            parameter:
+              type: string
+              description: The request parameter to which the error pertains.
+          required:
+            - parameter
+        - type: object
+          properties:
+            header:
+              type: string
+              description: The request header to which the error pertains
+          required:
+            - header
+
+    Link:
+      type: string
+      format: uri
+
+    ListLimit:
+      type: integer
+      minimum: 10
+      maximum: 100
+      multipleOf: 10
+      default: 10
+
+    ListBoardsResponse:
+      type: object
+      properties:
+        data:
+          $ref: "#/components/schemas/ListBoardsResponseData"
+        links:
+          $ref: "#/components/schemas/PaginatedLinks"
+      required:
+        - data
+        - links
+    ListBoardsResponseData:
+      type: array
+      items:
+        $ref: "#/components/schemas/BoardSummary"
+    PaginatedLinks:
+      type: object
+      properties:
+        first:
+          $ref: "#/components/schemas/Link"
+        next:
+          $ref: "#/components/schemas/Link"
+        previous:
+          $ref: "#/components/schemas/Link"
+
+    BoardSummary:
+      type: object
+      properties:
+        id:
+          $ref: "#/components/schemas/BoardId"
+        type:
+          $ref: "#/components/schemas/BoardResourceType"
+        attributes:
+          $ref: "#/components/schemas/BoardSummaryAttributes"
+        relationships:
+          $ref: "#/components/schemas/BoardSummaryRelationships"
+      additionalProperties: false
+      required:
+        - id
+        - type
+        - attributes
+    BoardId:
+      type: integer
+      format: int64
+    BoardResourceType:
+      type: string
+      enum:
+        - board
+    BoardSummaryAttributes:
+      type: object
+      properties:
+        title:
+          $ref: "#/components/schemas/BoardTitle"
+        description:
+          $ref: "#/components/schemas/BoardDescription"
+        state:
+          $ref: "#/components/schemas/BoardState"
+        category:
+          $ref: "#/components/schemas/BoardCategory"
+      additionalProperties: false
+      required:
+        - title
+        - state
+        - category
+    BoardSummaryRelationships:
+      type: object
+      properties:
+        messages:
+          $ref: "#/components/schemas/Link"
+    BoardTitle:
+      type: string
+      minLength: 1
+      maxLength: 255
+      description: The title of the board.
+    BoardDescription:
+      type: string
+      description: The description of the board. May include Markdown.
+    BoardState:
+      type: string
+      enum: [open, closed]
+      default: open
+      description: Whether the board is open (accepting new posts) or closed (not accepting new posts).
+    BoardCategory:
+      type: string
+      enum:
+        - in_character
+        - out_of_character
+      description: The category of the board.

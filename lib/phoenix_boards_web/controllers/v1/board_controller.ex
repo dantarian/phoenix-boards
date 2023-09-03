@@ -6,9 +6,23 @@ defmodule PhoenixBoardsWeb.V1.BoardController do
 
   action_fallback PhoenixBoardsWeb.FallbackController
 
-  def index(conn, _params) do
-    boards = Boards.list_boards()
-    render(conn, :index, boards: boards)
+  def index(conn, params) do
+    base_params = Map.take(params, ["limit", "state"])
+    %{entries: boards, metadata: metadata} = Boards.list_boards(params)
+
+    links = %{first: url(~p"/v1/boards?#{base_params}")}
+    links = case metadata do
+      %Paginator.Page.Metadata{after: cursor} when not is_nil(cursor) ->
+        Map.put(links, "next", url(~p"/v1/boards?#{Map.put(base_params, "after", cursor)}"))
+      _ -> links
+    end
+    links = case metadata do
+      %Paginator.Page.Metadata{before: cursor} when not is_nil(cursor) ->
+        Map.put(links, "previous", url(~p"/v1/boards?#{Map.put(base_params, "before", cursor)}"))
+      _ -> links
+    end
+
+    render(conn, :index, boards: boards, links: links)
   end
 
   def create(conn, %{"board" => board_params}) do

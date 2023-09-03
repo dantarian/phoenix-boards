@@ -15,11 +15,40 @@ defmodule PhoenixBoards.Boards do
   ## Examples
 
       iex> list_boards()
-      [%Board{}, ...]
+      %{entries: [%Board{}, ...], metadata: %{...}}
 
   """
-  def list_boards do
-    Repo.all(Board)
+  def list_boards(opts \\ %{})
+  def list_boards(%{"after" => _, "before" => _}), do: {:error, "at most one cursor allowed"}
+
+  def list_boards(%{} = opts) when not is_map_key(opts, "state") do
+    list_boards(Map.put(opts, "state", "open"))
+  end
+
+  def list_boards(%{} = opts) when not is_map_key(opts, "limit") do
+    list_boards(Map.put(opts, "limit", 10))
+  end
+
+  def list_boards(%{"limit" => limit} = opts) when not is_integer(limit) do
+    list_boards(%{opts | "limit" => String.to_integer(limit)})
+  end
+
+  def list_boards(%{"state" => state, "limit" => limit, "after" => cursor}) do
+    open = state == "open"
+    query = from(b in Board, where: b.open == ^open, order_by: [asc: b.id])
+    Repo.paginate(query, after: cursor, cursor_fields: [:id], limit: limit)
+  end
+
+  def list_boards(%{"state" => state, "limit" => limit, "before" => cursor}) do
+    open = state == "open"
+    query = from(b in Board, where: b.open == ^open, order_by: [asc: b.id])
+    Repo.paginate(query, before: cursor, cursor_fields: [:id], limit: limit)
+  end
+
+  def list_boards(%{"state" => state, "limit" => limit}) do
+    open = state == "open"
+    query = from(b in Board, where: b.open == ^open, order_by: [asc: b.id])
+    Repo.paginate(query, cursor_fields: [:id], limit: limit)
   end
 
   @doc """

@@ -44,7 +44,10 @@ defmodule PhoenixBoards.MixProject do
       {:gettext, "~> 0.20"},
       {:jason, "~> 1.2"},
       {:plug_cowboy, "~> 2.5"},
-      {:pow, "~> 1.0.30"}
+      {:pow, "~> 1.0.30"},
+      {:open_api_spex, "~> 3.18"},
+      {:yaml_elixir, "~> 2.9"},
+      {:paginator, "~> 1.2.0"}
     ]
   end
 

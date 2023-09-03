@@ -150,6 +150,12 @@ defmodule PhoenixBoardsWeb.MessageControllerTest do
          board_id: board_id,
          user_id: user_id
        }) do
-    %{"id" => id, "from" => from, "message" => message, "board_id" => board_id, "user_id" => user_id}
+    %{
+      "id" => id,
+      "from" => from,
+      "message" => message,
+      "board_id" => board_id,
+      "user_id" => user_id
+    }
   end
 end

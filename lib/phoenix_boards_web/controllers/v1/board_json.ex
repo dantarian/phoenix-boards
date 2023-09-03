@@ -4,8 +4,11 @@ defmodule PhoenixBoardsWeb.V1.BoardJSON do
   @doc """
   Renders a list of boards.
   """
-  def index(%{boards: boards}) do
-    %{data: for(board <- boards, do: data(board))}
+  def index(%{boards: boards, links: links}) do
+    %{
+      data: for(board <- boards, do: data(board)),
+      links: links
+    }
   end
 
   @doc """
@@ -16,12 +19,18 @@ defmodule PhoenixBoardsWeb.V1.BoardJSON do
   end
 
   defp data(%Board{} = board) do
+    state = if board.open, do: "open", else: "closed"
+    category = if board.in_character, do: "in_character", else: "out_of_character"
+
     %{
       id: board.id,
-      title: board.title,
-      description: board.description,
-      in_character: board.in_character,
-      open: board.open
+      type: "board",
+      attributes: %{
+        title: board.title,
+        description: board.description,
+        state: state,
+        category: category
+      }
     }
   end
 end
